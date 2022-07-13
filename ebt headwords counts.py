@@ -16,21 +16,25 @@ def setup():
 	
 	# ebts counts df
 
+	print(f"{timeis()} {white}1\tebts counts df")
 	ebṭ_counts_df = pd.read_csv(
 		"../frequency maps/output/word count csvs/ebts.csv", sep="\t", header=None)
 
 	# dpd df
 
+	print(f"{timeis()} {white}2\tdpd df")
 	dpd_df = pd.read_csv("../csvs/dpd-full.csv", sep="\t", dtype = str)
 	dpd_df.fillna("", inplace=True)
 
 	# all inflections dict
 
+	print(f"{timeis()} {white}3\tall inflections dict")
 	with open("../inflection generator/output/all inflections dict", "rb") as p:
 		all_inflections_dict = pickle.load(p)
 
 	# sandhi matches df
 
+	print(f"{timeis()} {white}4\tsandhi matches df")
 	sandhi_matches_df = pd.read_csv(
 		"../inflection generator/output/sandhi/matches sorted.csv", sep="\t")
 
@@ -45,6 +49,8 @@ def setup():
 	sandhi_matches_dict_df.to_csv("output/sandhi_matches.csv", sep="\t", header =None)
 
 	# make headwords pos count dict
+
+	print(f"{timeis()} {white}5\theadwords pos count dict")
 	headwords_pos_count_dict = {}
 
 	pos_exceptions = ["ve", "letter", "cs", "prefix", "suffix", "root", "sandhi", "idiom"]
@@ -53,6 +59,13 @@ def setup():
 		headword = dpd_df.loc[row, "Pāli1"]
 		headword_clean = re.sub(" \d*$", "", headword)
 		pos = dpd_df.loc[row, "POS"]
+		root = dpd_df.loc[row, "Pāli Root"]
+		root_gr = dpd_df.loc[row, "Grp"]
+		root_mn = dpd_df.loc[row, "Root Meaning"]
+		if root != "":
+			root_info = f"{root} {root_gr} ({root_mn})"
+		else:
+			root_info = ""
 		headword_pos = f"{headword_clean}_{pos}"
 		stem = dpd_df.loc[row, "Stem"]
 		pattern = dpd_df.loc[row, "Pattern"]
@@ -61,7 +74,7 @@ def setup():
 		if (not re.findall ("!", stem) and 
 		pos not in pos_exceptions and
 		headword_pos not in headwords_pos_count_dict):
-			headwords_pos_count_dict[headword_pos] = {'headword':headword_clean, 'pos': pos, 'pattern':pattern, 'inflections': inflections, 'count': 0, 'found':{}}
+			headwords_pos_count_dict[headword_pos] = {'headword':headword_clean, 'pos': pos, 'root':root_info, 'pattern':pattern, 'inflections': inflections, 'count': 0, 'found':{}}
 
 	return ebṭ_counts_df, dpd_df, all_inflections_dict, sandhi_matches_dict, headwords_pos_count_dict
 
@@ -73,7 +86,7 @@ def step1_clean_inflection():
 	print(f"{timeis()} {green}finding clean inflections")
 	not_matched_dict = {}
 	ebt_length = len(ebṭ_counts_df)
-	for row in range(ebt_length):  #
+	for row in range(2000):  # ebt_length
 		flag = False
 		inflected_word = ebṭ_counts_df.iloc[row, 0]
 		value = ebṭ_counts_df.iloc[row, 1]
@@ -106,16 +119,18 @@ def step2_split_sandhis():
 	flag = False
 	still_unmatched_dict = {}
 	matched = []
-	for not_matched in not_matched_dict:
-		print(f"{timeis()} {white}{not_matched}")
-		value = not_matched_dict[not_matched]
-		if not_matched in sandhi_matches_dict:
-			sandhi_words = sandhi_matches_dict[not_matched].split("-")
+	counter = 0
+	for unmatched_word in not_matched_dict:
+		if counter %100 == 0:
+			print(f"{timeis()} {white}{counter}/{len(not_matched_dict)}\t{unmatched_word}")
+		value = not_matched_dict[unmatched_word]
+		if unmatched_word in sandhi_matches_dict:
+			sandhi_words = sandhi_matches_dict[unmatched_word].split("-")
 			for sandhi_word in sandhi_words:
 				for headword in headwords_pos_count_dict:
 					if sandhi_word in headwords_pos_count_dict[headword]['inflections']:
 						headwords_pos_count_dict[headword]['count'] += value
-						matched.append(not_matched)
+						matched.append(unmatched_word)
 						flag = True
 						if sandhi_word in headwords_pos_count_dict[headword]['found']:
 							headwords_pos_count_dict[headword]['found'][sandhi_word] += value							
@@ -123,14 +138,16 @@ def step2_split_sandhis():
 							headwords_pos_count_dict[headword]['found'][sandhi_word] = value
 								
 				if flag == False:
-					still_unmatched_dict[not_matched] = value
+					still_unmatched_dict[unmatched_word] = value
+		counter +=1
 
 	print(f"{timeis()} {green}unmatched {white}{len(not_matched_dict)}")
 	print(f"{timeis()} {green}matched {white}{len(matched)}")
 	
 	print(f"{timeis()} {green}still unmatched")
-	for key, value in still_unmatched_dict.items():
-		print(f"{timeis()} {white}{key} {value}")
+	print(f"{timeis()} {white}{still_unmatched_dict}")
+	# for key, value in still_unmatched_dict.items():
+	# 	print(f"{timeis()} {white}{key} {value}")
 
 	df = pd.DataFrame.from_dict(headwords_pos_count_dict, orient="index")
 	df.sort_values("count", inplace=True, ascending=False)
