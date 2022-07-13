@@ -18,25 +18,21 @@ def setup():
 
 	ebṭ_counts_df = pd.read_csv(
 		"../frequency maps/output/word count csvs/ebts.csv", sep="\t", header=None)
-	# print(ebṭ_counts_df)
 
 	# dpd df
 
 	dpd_df = pd.read_csv("../csvs/dpd-full.csv", sep="\t", dtype = str)
 	dpd_df.fillna("", inplace=True)
-	# print(dpd_df)
 
 	# all inflections dict
 
 	with open("../inflection generator/output/all inflections dict", "rb") as p:
 		all_inflections_dict = pickle.load(p)
-	# print(all_inflections_dict)
 
 	# sandhi matches df
 
 	sandhi_matches_df = pd.read_csv(
 		"../inflection generator/output/sandhi/matches sorted.csv", sep="\t")
-	# print(sandhi_matches_df)
 
 	sandhi_matches_dict = {}
 	for row in range(len(sandhi_matches_df)):
@@ -48,14 +44,8 @@ def setup():
 	sandhi_matches_dict_df = pd.DataFrame.from_dict(sandhi_matches_dict, orient="index")
 	sandhi_matches_dict_df.to_csv("output/sandhi_matches.csv", sep="\t", header =None)
 
-
 	# make headwords pos count dict
 	headwords_pos_count_dict = {}
-
-	# for headword in all_inflections_dict:
-	# 	headword_clean = re.sub(" \d*$", "", headword)
-	# 	pos = all_inflections_dict[headword]['pos']
-	# 	headword_pos = f"{headword_clean}_{pos}"
 
 	pos_exceptions = ["ve", "letter", "cs", "prefix", "suffix", "root", "sandhi", "idiom"]
 
@@ -72,12 +62,6 @@ def setup():
 		pos not in pos_exceptions and
 		headword_pos not in headwords_pos_count_dict):
 			headwords_pos_count_dict[headword_pos] = {'headword':headword_clean, 'pos': pos, 'pattern':pattern, 'inflections': inflections, 'count': 0, 'found':{}}
-	# print(len(headwords_pos_count_dict))
-	# counter = 0
-	# for word in headwords_pos_count_dict.items():
-	# 	if counter < 20:
-	# 		print (word)
-	# 		counter+=1
 
 	return ebṭ_counts_df, dpd_df, all_inflections_dict, sandhi_matches_dict, headwords_pos_count_dict
 
@@ -89,7 +73,7 @@ def step1_clean_inflection():
 	print(f"{timeis()} {green}finding clean inflections")
 	not_matched_dict = {}
 	ebt_length = len(ebṭ_counts_df)
-	for row in range(30000):  # lebt_length
+	for row in range(ebt_length):  #
 		flag = False
 		inflected_word = ebṭ_counts_df.iloc[row, 0]
 		value = ebṭ_counts_df.iloc[row, 1]
@@ -106,16 +90,9 @@ def step1_clean_inflection():
 
 	print(f"{timeis()} {green}saving csvs")
 
-	# df = pd.DataFrame.from_dict(headwords_pos_count_dict, orient="index")
-	# df.sort_values("count", inplace=True, ascending=False)
-	# df.drop("inflections", axis="columns", inplace=True)
-	# df.to_csv("output/headword pos count1.csv", sep="\t")
-	
+
 	not_matched_df = pd.DataFrame.from_dict(not_matched_dict, orient="index")
 	not_matched_df.to_csv("output/not matched.csv", sep="\t", header=None)
-
-	# print(not_matched)
-	# print(len(not_matched))
 
 	return headwords_pos_count_dict, not_matched_dict
 	
@@ -148,10 +125,8 @@ def step2_split_sandhis():
 				if flag == False:
 					still_unmatched_dict[not_matched] = value
 
-
-	# print(f"{timeis()} {green}not_matched_dict")
-	# for key, value in not_matched_dict.items():
-	# 	print(f"{timeis()} {white}{key} {value}")
+	print(f"{timeis()} {green}unmatched {white}{len(not_matched_dict)}")
+	print(f"{timeis()} {green}matched {white}{len(matched)}")
 	
 	print(f"{timeis()} {green}still unmatched")
 	for key, value in still_unmatched_dict.items():
@@ -163,6 +138,4 @@ def step2_split_sandhis():
 	df.to_csv("output/headword pos count.csv", sep="\t")
 
 step2_split_sandhis()
-
-
 toc()
