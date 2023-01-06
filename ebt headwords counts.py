@@ -7,18 +7,14 @@ import pickle
 import re
 from timeis import timeis, tic, toc, yellow, line, green, white
 
-tic()
-print(f"{timeis()} {yellow}ebt headword pos counts")
-print(f"{timeis()} {line}")
-
 def setup():
 	print(f"{timeis()} {green}setting up df's and dicts")
 	
-	# ebts counts df
+	# text counts df
 
-	print(f"{timeis()} {white}1\tebts counts df")
-	ebṭ_counts_df = pd.read_csv(
-		"../frequency maps/output/word count csvs/ebts.csv", sep="\t", header=None)
+	print(f"{timeis()} {white}1\ttext counts df")
+	# text_counts_df = pd.read_csv("../frequency maps/output/word count csvs/ebts.csv", sep="\t", header=None)
+	text_counts_df = pd.read_csv("../frequency maps/output/word count csvs/tipiṭaka.csv", sep="\t", header=None)
 
 	# dpd df
 
@@ -39,8 +35,10 @@ def setup():
 		"../inflection generator/output/sandhi/matches sorted.csv", sep="\t")
 
 	sandhi_matches_dict = {}
+
 	for row in range(len(sandhi_matches_df)):
 		sandhi = sandhi_matches_df.loc[row, "word"]
+
 		if sandhi not in sandhi_matches_dict.keys():
 			sandhi_split = sandhi_matches_df.loc[row, "split"]
 			sandhi_split = re.sub(r" \+ ", "-", sandhi_split)
@@ -53,6 +51,7 @@ def setup():
 
 	print(f"{timeis()} {white}5\theadwords pos count dict")
 	print(f"{timeis()} {white}6\troots count dict")
+
 	headwords_pos_count_dict = {}
 	roots_count_dict = {}
 
@@ -86,22 +85,19 @@ def setup():
 		root_info in roots_count_dict):
 			roots_count_dict[root_info]['inflections'] += list(inflections)
 	
-	return ebṭ_counts_df, dpd_df, all_inflections_dict, sandhi_matches_dict, headwords_pos_count_dict, roots_count_dict
-
-
-ebṭ_counts_df, dpd_df, all_inflections_dict, sandhi_matches_dict, headwords_pos_count_dict, roots_count_dict = setup()
+	return text_counts_df, dpd_df, all_inflections_dict, sandhi_matches_dict, headwords_pos_count_dict, roots_count_dict
 
 
 def step1_clean_inflection():
 	print(f"{timeis()} {green}finding clean inflections")
 	not_matched_dict = {}
-	ebt_length = len(ebṭ_counts_df)
-	for row in range(ebt_length):  # ebt_length
+	text_length = len(text_counts_df)
+	for row in range(10000):  # text_length
 		flag = False
-		inflected_word = ebṭ_counts_df.iloc[row, 0]
-		value = ebṭ_counts_df.iloc[row, 1]
+		inflected_word = text_counts_df.iloc[row, 0]
+		value = text_counts_df.iloc[row, 1]
 		if row %1000==0:
-			print(f"{timeis()} {white}{row}/{ebt_length}\t{inflected_word} {value}")
+			print(f"{timeis()} {white}{row}/{text_length}\t{inflected_word} {value}")
 
 		for headword in headwords_pos_count_dict:
 			if inflected_word in headwords_pos_count_dict[headword]['inflections']:
@@ -123,9 +119,6 @@ def step1_clean_inflection():
 
 	return headwords_pos_count_dict, not_matched_dict, roots_count_dict
 	
-
-headwords_pos_count_dict, not_matched_dict, roots_count_dict = step1_clean_inflection()
-
 
 def step2_split_sandhis():
 	print(f"{timeis()} {green}splitting sandhis")
@@ -175,6 +168,7 @@ def step2_split_sandhis():
 
 	df = pd.DataFrame.from_dict(headwords_pos_count_dict, orient="index")
 	df.sort_values("count", inplace=True, ascending=False)
+	df = df[df['count'] != 0]
 	df.drop("inflections", axis="columns", inplace=True)
 	df.to_csv("output/headword pos count.csv", sep="\t")
 
@@ -186,5 +180,11 @@ def step2_split_sandhis():
 	df2.drop("inflections", axis="columns", inplace=True)
 	df2.to_csv("output/roots count dict.tsv", sep="\t")
 
+
+tic()
+print(f"{timeis()} {yellow}tipitaka headword pos counts")
+print(f"{timeis()} {line}")
+text_counts_df, dpd_df, all_inflections_dict, sandhi_matches_dict, headwords_pos_count_dict, roots_count_dict = setup()
+headwords_pos_count_dict, not_matched_dict, roots_count_dict = step1_clean_inflection()
 step2_split_sandhis()
 toc()
