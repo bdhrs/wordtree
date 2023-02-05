@@ -59,7 +59,7 @@ def setup():
 
 	for row in range(len(dpd_df)):
 		headword = dpd_df.loc[row, "Pāli1"]
-		headword_clean = re.sub(" \d*$", "", headword)
+		headword_clean = re.sub(" \\d.*$", "", headword)
 		pos = dpd_df.loc[row, "POS"]
 		root = dpd_df.loc[row, "Pāli Root"]
 		root_gr = dpd_df.loc[row, "Grp"]

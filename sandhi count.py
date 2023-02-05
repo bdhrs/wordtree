@@ -19,7 +19,7 @@ def setup_sandhi_freq_dict():
 		test2 = details["pos"] == "sandhix"
 		if test1 or test2:
 			# print(headword, details["pos"])
-			headword = re.sub(" \\d*$", "", headword)
+			headword = re.sub(" \\d.*$", "", headword)
 			sandhi_freq_dict[headword] = {"count":0, "construction":"" }
 	
 	print(f"{white}{len(sandhi_freq_dict)}")
@@ -83,7 +83,7 @@ def add_construction():
 		pos = dpd_df.loc[row, "POS"]
 		if pos == "sandhi":
 			headword = dpd_df.loc[row, "Pāli1"]
-			headword_clean = re.sub(" \\d*$", "", headword)
+			headword_clean = re.sub(" \\d.*$", "", headword)
 			construction = dpd_df.loc[row, "Construction"]
 			if construction != "":
 				try:
